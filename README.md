@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pollly - Modern Polling Application
+
+A modern polling platform built with Next.js, TypeScript, and Shadcn UI components.
+
+## Features
+
+- **User Authentication**: Secure login and registration system
+- **Poll Creation**: Create custom polls with multiple options
+- **Poll Voting**: Vote on polls and see real-time results
+- **Modern UI**: Beautiful interface built with Shadcn components
+- **Responsive Design**: Works seamlessly on desktop and mobile
+
+## Project Structure
+
+```
+app/
+├── auth/                    # Authentication pages
+│   ├── login/
+│   │   └── page.tsx        # Login page
+│   └── register/
+│       └── page.tsx        # Registration page
+├── components/
+│   ├── auth/               # Authentication components
+│   │   ├── auth-layout.tsx # Layout wrapper for auth pages
+│   │   ├── login-form.tsx  # Login form component
+│   │   └── register-form.tsx # Registration form component
+│   ├── layout/
+│   │   └── navigation.tsx  # Main navigation component
+│   └── ui/                 # Shadcn UI components
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       └── label.tsx
+├── create-poll/
+│   └── page.tsx           # Poll creation page
+├── lib/
+│   └── utils.ts           # Utility functions
+├── polls/
+│   └── page.tsx           # Polls listing page
+├── types/
+│   ├── auth.ts            # Authentication types
+│   └── poll.ts            # Poll-related types
+├── globals.css            # Global styles
+├── layout.tsx             # Root layout
+└── page.tsx               # Home page
+```
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Open your browser** and navigate to `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/` - Home page with app overview
+- `/auth/login` - User login page
+- `/auth/register` - User registration page
+- `/polls` - Browse and vote on polls
+- `/create-poll` - Create new polls
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 15
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn UI
+- **Icons**: Lucide React
+- **State Management**: React hooks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development Status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This is a scaffolded application with placeholder functionality. The following features are ready for implementation:
 
-## Deploy on Vercel
+- [ ] Backend API integration
+- [ ] Database setup
+- [ ] User authentication logic
+- [ ] Poll creation and voting functionality
+- [ ] Real-time updates
+- [ ] User profile management
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License
