@@ -1,23 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { RegisterCredentials } from "@/app/types/auth";
-import { useAuthStore } from "@/app/lib/auth-store";
 
 interface RegisterFormProps {
-  onSubmit?: (credentials: RegisterCredentials) => void;
+  onSubmit: (credentials: RegisterCredentials) => void;
   isLoading?: boolean;
 }
 
-export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterFormProps) {
-  const router = useRouter();
-  const { register, isLoading, error, clearError } = useAuthStore();
+export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps) {
   const [formData, setFormData] = useState<RegisterCredentials>({
     name: "",
     email: "",
@@ -27,7 +22,7 @@ export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterF
 
   const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -47,7 +42,7 @@ export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterF
     }
     
     setErrors({});
-    await register(formData);
+    onSubmit(formData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,18 +59,7 @@ export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterF
         [name]: undefined,
       }));
     }
-    
-    if (error) {
-      clearError();
-    }
   };
-
-  // Redirect on successful registration
-  useEffect(() => {
-    if (useAuthStore.getState().isAuthenticated) {
-      router.push('/polls');
-    }
-  }, [router]);
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -86,12 +70,6 @@ export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterF
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
@@ -147,8 +125,8 @@ export function RegisterForm({ onSubmit, isLoading: externalLoading }: RegisterF
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading || externalLoading}>
-            {isLoading || externalLoading ? "Creating account..." : "Create account"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Create account"}
           </Button>
         </form>
       </CardContent>
