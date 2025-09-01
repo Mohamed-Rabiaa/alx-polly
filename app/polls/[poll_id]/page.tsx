@@ -11,44 +11,56 @@ import { useAuth } from '@/app/context/auth-context';
 const examplePolls = {
   '1': {
     poll: {
-      id: 1,
+      id: "1",
       title: "What's your favorite programming language?",
       description: "Created by John Doe • 2 days ago",
-      user_id: "",
-      created_at: ""
+      options: [],
+      createdBy: "user1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      totalVotes: 0
     },
     options: [
-      { id: 1, poll_id: 1, option_text: 'JavaScript' },
-      { id: 2, poll_id: 1, option_text: 'Python' },
-      { id: 3, poll_id: 1, option_text: 'TypeScript' },
+      { id: "1", poll_id: "1", text: 'JavaScript', votes: 0, percentage: 0 },
+      { id: "2", poll_id: "1", text: 'Python', votes: 0, percentage: 0 },
+      { id: "3", poll_id: "1", text: 'TypeScript', votes: 0, percentage: 0 },
     ],
   },
   '2': {
     poll: {
-      id: 2,
+      id: "2",
       title: "Which framework do you prefer?",
       description: "Created by Jane Smith • 1 week ago",
-      user_id: "",
-      created_at: ""
+      options: [],
+      createdBy: "user2",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      totalVotes: 0
     },
     options: [
-      { id: 4, poll_id: 2, option_text: 'React' },
-      { id: 5, poll_id: 2, option_text: 'Vue' },
-      { id: 6, poll_id: 2, option_text: 'Angular' },
+      { id: "4", poll_id: "2", text: 'React', votes: 0, percentage: 0 },
+      { id: "5", poll_id: "2", text: 'Vue', votes: 0, percentage: 0 },
+      { id: "6", poll_id: "2", text: 'Angular', votes: 0, percentage: 0 },
     ],
   },
   '3': {
     poll: {
-      id: 3,
+      id: "3",
       title: "Best pizza topping?",
       description: "Created by Mike Johnson • 3 days ago",
-      user_id: "",
-      created_at: ""
+      options: [],
+      createdBy: "user3",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      totalVotes: 0
     },
     options: [
-      { id: 7, poll_id: 3, option_text: 'Pepperoni' },
-      { id: 8, poll_id: 3, option_text: 'Margherita' },
-      { id: 9, poll_id: 3, option_text: 'Hawaiian' },
+      { id: "7", poll_id: "3", text: 'Pepperoni', votes: 0, percentage: 0 },
+      { id: "8", poll_id: "3", text: 'Margherita', votes: 0, percentage: 0 },
+      { id: "9", poll_id: "3", text: 'Hawaiian', votes: 0, percentage: 0 },
     ],
   },
 };
@@ -60,7 +72,7 @@ export default function VotePage() {
 
   const [poll, setPoll] = useState<Poll | null>(null);
   const [options, setOptions] = useState<PollOption[]>([]);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
@@ -163,7 +175,7 @@ export default function VotePage() {
                 className={`p-4 border rounded-md cursor-pointer ${selectedOption === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
                 onClick={() => !hasVoted && setSelectedOption(option.id)}
               >
-                {option.option_text}
+                {option.text}
               </div>
             ))}
           </div>

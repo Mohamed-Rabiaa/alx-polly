@@ -11,25 +11,37 @@ import { Poll } from "@/app/types/poll";
 
 const examplePolls: Poll[] = [
   {
-    id: 1,
+    id: "1",
     title: "What's your favorite programming language?",
     description: "Created by John Doe • 2 days ago",
-    user_id: "",
-    created_at: ""
+    options: [],
+    createdBy: "user1",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true,
+    totalVotes: 0
   },
   {
-    id: 2,
+    id: "2",
     title: "Which framework do you prefer?",
     description: "Created by Jane Smith • 1 week ago",
-    user_id: "",
-    created_at: ""
+    options: [],
+    createdBy: "user2",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true,
+    totalVotes: 0
   },
   {
-    id: 3,
+    id: "3",
     title: "Best pizza topping?",
     description: "Created by Mike Johnson • 3 days ago",
-    user_id: "",
-    created_at: ""
+    options: [],
+    createdBy: "user3",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true,
+    totalVotes: 0
   },
 ];
 
