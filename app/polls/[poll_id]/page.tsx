@@ -15,16 +15,16 @@ const examplePolls = {
       title: "What's your favorite programming language?",
       description: "Created by John Doe • 2 days ago",
       options: [],
-      createdBy: "user1",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: true,
-      totalVotes: 0
+      user_id: "user1",
+      created_at: new Date(),
+      updated_at: new Date(),
+      is_active: true,
+      total_votes: 0
     },
     options: [
-      { id: "1", poll_id: "1", text: 'JavaScript', votes: 0, percentage: 0 },
-      { id: "2", poll_id: "1", text: 'Python', votes: 0, percentage: 0 },
-      { id: "3", poll_id: "1", text: 'TypeScript', votes: 0, percentage: 0 },
+      { id: "1", poll_id: "1", option_text: 'JavaScript', votes: 0, percentage: 0 },
+      { id: "2", poll_id: "1", option_text: 'Python', votes: 0, percentage: 0 },
+      { id: "3", poll_id: "1", option_text: 'TypeScript', votes: 0, percentage: 0 },
     ],
   },
   '2': {
@@ -33,16 +33,16 @@ const examplePolls = {
       title: "Which framework do you prefer?",
       description: "Created by Jane Smith • 1 week ago",
       options: [],
-      createdBy: "user2",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: true,
-      totalVotes: 0
+      user_id: "user2",
+      created_at: new Date(),
+      updated_at: new Date(),
+      is_active: true,
+      total_votes: 0
     },
     options: [
-      { id: "4", poll_id: "2", text: 'React', votes: 0, percentage: 0 },
-      { id: "5", poll_id: "2", text: 'Vue', votes: 0, percentage: 0 },
-      { id: "6", poll_id: "2", text: 'Angular', votes: 0, percentage: 0 },
+      { id: "4", poll_id: "2", option_text: 'React', votes: 0, percentage: 0 },
+      { id: "5", poll_id: "2", option_text: 'Vue', votes: 0, percentage: 0 },
+      { id: "6", poll_id: "2", option_text: 'Angular', votes: 0, percentage: 0 },
     ],
   },
   '3': {
@@ -175,7 +175,7 @@ export default function VotePage() {
                 className={`p-4 border rounded-md cursor-pointer ${selectedOption === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
                 onClick={() => !hasVoted && setSelectedOption(option.id)}
               >
-                {option.text}
+                {option.option_text}
               </div>
             ))}
           </div>

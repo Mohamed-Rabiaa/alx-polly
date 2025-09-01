@@ -3,18 +3,18 @@ export interface Poll {
   title: string;
   description?: string;
   options: PollOption[];
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  isActive: boolean;
-  totalVotes: number;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
+  is_active: boolean;
+  total_votes: number;
 }
 
 export interface PollOption {
   id: string;
-  text: string;
-  votes: number;
-  percentage: number;
+  option_text: string;
+  votes?: number;
+  percentage?: number;
 }
 
 export interface CreatePollData {
