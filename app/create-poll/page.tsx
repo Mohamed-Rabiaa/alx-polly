@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -15,6 +16,7 @@ import { withAuth } from "@/app/components/auth/with-auth";
 import { useAuth } from "@/app/context/auth-context";
 import { Header } from "@/app/components/layout/header";
 import { createSupabaseBrowserClient } from "@/app/lib/supabase";
+import { useToast } from "@/app/components/ui/use-toast";
 
 function CreatePollPageContent() {
   const [pollData, setPollData] = useState({
@@ -25,11 +27,17 @@ function CreatePollPageContent() {
   const [showPreview, setShowPreview] = useState(false);
   const { user } = useAuth();
   const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("You must be logged in to create a poll.");
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to create a poll."
+      });
       return;
     }
 
@@ -46,7 +54,11 @@ function CreatePollPageContent() {
 
     if (pollError) {
       console.error("Error creating poll:", pollError);
-      alert(`Error creating poll: ${pollError.message}`);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Error creating poll: ${pollError.message}`
+      });
       return;
     }
 
@@ -60,7 +72,11 @@ function CreatePollPageContent() {
 
     if (optionsError) {
       console.error("Error creating poll options:", optionsError);
-      alert("Error creating poll options. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error creating poll options. Please try again."
+      });
       return;
     }
 
@@ -71,7 +87,15 @@ function CreatePollPageContent() {
       options: ["", ""],
     });
 
-    alert("Poll created successfully!");
+    // 4. Show success message and redirect
+    toast({
+      variant: "success",
+      title: "Success",
+      description: "Poll created successfully!"
+    });
+    
+    // Redirect to polls page
+    router.push("/polls");
   };
 
   const addOption = () => {
