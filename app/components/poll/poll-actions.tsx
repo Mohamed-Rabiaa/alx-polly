@@ -18,25 +18,25 @@ import {
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
 
-interface PollActionsProps {
+interface PollProps {
   pollId: string;
   pollCreatorId: string;
   currentUserId: string | undefined;
   onPollDeleted?: () => void;
 }
 
-export function PollActions({
+export function Poll({
   pollId,
   pollCreatorId,
   currentUserId,
   onPollDeleted,
-}: PollActionsProps) {
+}: PollProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createSupabaseBrowserClient();
 
-  // Only show actions if the current user created this poll
+  // Only show  if the current user created this poll
   // Temporarily showing for all users for testing purposes
   if (!currentUserId) {
     return null;

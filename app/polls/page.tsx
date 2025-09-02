@@ -9,7 +9,7 @@ import { Header } from "@/app/components/layout/header";
 import { createSupabaseBrowserClient } from "@/app/lib/supabase";
 import { Poll } from "@/app/types/poll";
 import { useAuth } from "@/app/context/auth-context";
-import { PollActions } from "@/app/components/poll/poll-actions";
+import { Poll } from "@/app/components/poll/poll-";
 import { useToast } from "@/app/components/ui/use-toast";
 
 const examplePolls: Poll[] = [
@@ -92,7 +92,7 @@ function PollsPageContent() {
                       <CardTitle>{poll.title}</CardTitle>
                       <CardDescription>{poll.description}</CardDescription>
                     </div>
-                    <PollActions 
+                    <Poll 
                       pollId={poll.id} 
                       pollCreatorId={poll.user_id} 
                       currentUserId={user?.id} 
