@@ -16,6 +16,7 @@ import { withAuth } from "@/app/components/auth/with-auth";
 import { useAuth } from "@/app/context/auth-context";
 import { Header } from "@/app/components/layout/header";
 import { createSupabaseBrowserClient } from "@/app/lib/supabase";
+import { deleteVotesForOptionSecure, deletePollOptionSecure, checkVotesForOptionSecure, verifyOptionExistsSecure } from "@/app/lib/actions/poll-actions-secure";
 import { useToast } from "@/app/components/ui/use-toast";
 import { Poll, PollOption } from "@/app/types/poll";
 
@@ -72,16 +73,15 @@ function EditPollPageContent({ params }: EditPollPageProps) {
         }
 
         // Check if the current user is the creator of the poll
-        // Temporarily disabled for testing purposes
-        // if (pollData.user_id !== user.id) {
-        //   toast({
-        //     title: "Unauthorized",
-        //     description: "You can only edit your own polls.",
-        //     variant: "destructive",
-        //   });
-        //   router.push("/polls");
-        //   return;
-        // }
+        if (pollData.user_id !== user.id) {
+          toast({
+            title: "Unauthorized",
+            description: "You can only edit your own polls.",
+            variant: "destructive",
+          });
+          router.push("/polls");
+          return;
+        }
 
         // Fetch poll options
         const { data: optionsData, error: optionsError } = await supabase
@@ -168,39 +168,25 @@ function EditPollPageContent({ params }: EditPollPageProps) {
       const currentOptionTexts = pollData.options.filter(option => option.trim() !== '');
       const existingOptions = [...pollOptions];
       
+      
+      
       // Track which existing options to keep
-      const optionsToKeep = new Set<number>();
-      const optionsToUpdate: { id: number; text: string }[] = [];
+      const optionsToKeep = new Set<string>();
       const optionsToCreate: string[] = [];
 
-      // Match current options with existing ones
+      // Match current options with existing ones using exact text matching only
       for (const currentText of currentOptionTexts) {
-        // Find an existing option that matches or can be updated
-        const matchingOption = existingOptions.find((existing, index) => 
-          !optionsToKeep.has(existing.id) && 
-          (existing.option_text === currentText || !optionsToKeep.has(existing.id))
+        // Try to find an exact match
+        const matchingOption = existingOptions.find(existing => 
+          !optionsToKeep.has(existing.id) && existing.option_text === currentText
         );
 
         if (matchingOption) {
+          // Keep this existing option as it matches exactly
           optionsToKeep.add(matchingOption.id);
-          if (matchingOption.option_text !== currentText) {
-            optionsToUpdate.push({ id: matchingOption.id, text: currentText });
-          }
         } else {
+          // No exact match found, create a new option
           optionsToCreate.push(currentText);
-        }
-      }
-
-      // Update existing options
-      for (const { id, text } of optionsToUpdate) {
-        const { error } = await supabase
-          .from("poll_options")
-          .update({ option_text: text })
-          .eq("id", id);
-
-        if (error) {
-          console.error("Error updating option:", error);
-          throw new Error(`Failed to update option: ${error.message}`);
         }
       }
 
@@ -219,16 +205,55 @@ function EditPollPageContent({ params }: EditPollPageProps) {
 
       // Delete options that are no longer needed
       const optionsToDelete = existingOptions.filter(option => !optionsToKeep.has(option.id));
-      for (const option of optionsToDelete) {
-        const { error } = await supabase
-          .from("poll_options")
-          .delete()
-          .eq("id", option.id);
+      
+      if (optionsToDelete.length > 0) {
+        for (const option of optionsToDelete) {
+          // Check for votes first using secure server action
+          const votesResult = await checkVotesForOptionSecure(option.id);
+          
+          if (!votesResult.success) {
+            console.error("Error checking votes for option:", votesResult.error);
+            throw new Error(`Failed to check votes: ${votesResult.error}`);
+          }
+          
+          const votesData = votesResult.votes;
 
-        if (error) {
-          console.error("Error deleting option:", error);
-          throw new Error(`Failed to delete option: ${error.message}`);
+          
+          // Delete associated votes first if any exist
+          if (votesData.length > 0) {
+            const deleteVotesResult = await deleteVotesForOptionSecure(option.id);
+            
+            if (!deleteVotesResult.success) {
+              throw new Error(`Failed to delete votes for option: ${deleteVotesResult.error}`);
+            }
+          }
+          
+          // Delete the poll option using secure server action
+          const deleteResult = await deletePollOptionSecure(option.id);
+          
+          if (!deleteResult.success) {
+            throw new Error(`Failed to delete poll option: ${deleteResult.error}`);
+          }
+          
+
         }
+      }
+
+      // Refresh the poll data to reflect changes
+      const { data: updatedOptionsData, error: refreshError } = await supabase
+        .from("poll_options")
+        .select("*")
+        .eq("poll_id", poll_id);
+        
+      if (refreshError) {
+        console.error("Error refreshing poll options:", refreshError);
+      } else {
+
+        setPollOptions(updatedOptionsData || []);
+        setPollData(prev => ({
+          ...prev,
+          options: updatedOptionsData ? updatedOptionsData.map(option => option.option_text) : []
+        }));
       }
 
       toast({
@@ -311,7 +336,7 @@ function EditPollPageContent({ params }: EditPollPageProps) {
                 <div className="space-y-4">
                   <Label>Poll Options</Label>
                   {pollData.options.map((option, index) => (
-                    <div key={index} className="flex space-x-2">
+                    <div key={`option-${index}-${option}`} className="flex space-x-2">
                       <Input
                         placeholder={`Option ${index + 1}`}
                         value={option}

@@ -2,7 +2,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRouter } from 'next/navigation'
-import { Poll } from '../poll-actions'
+import { Poll as PollActions } from '../poll-actions'
 import { createSupabaseBrowserClient } from '../../../lib/supabase'
 import { useToast } from '../../ui/use-toast'
 
@@ -47,21 +47,21 @@ describe('Poll Component', () => {
 
   describe('Rendering', () => {
     it('renders edit and delete buttons when user is authenticated', () => {
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
     })
 
     it('does not render when currentUserId is undefined', () => {
-      render(<Poll {...defaultProps} currentUserId={undefined} />)
+      render(<PollActions {...defaultProps} currentUserId={undefined} />)
       
       expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument()
     })
 
     it('renders with correct button styles and icons', () => {
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       const editButton = screen.getByRole('button', { name: /edit/i })
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -74,7 +74,7 @@ describe('Poll Component', () => {
   describe('Edit Functionality', () => {
     it('navigates to edit page when edit button is clicked', async () => {
       const user = userEvent.setup()
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       const editButton = screen.getByRole('button', { name: /edit/i })
       await user.click(editButton)
@@ -86,7 +86,7 @@ describe('Poll Component', () => {
   describe('Delete Functionality', () => {
     it('opens confirmation dialog when delete button is clicked', async () => {
       const user = userEvent.setup()
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       const deleteButton = screen.getByRole('button', { name: /delete/i })
       await user.click(deleteButton)
@@ -97,7 +97,7 @@ describe('Poll Component', () => {
 
     it('shows cancel and delete poll buttons in confirmation dialog', async () => {
       const user = userEvent.setup()
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       const deleteButton = screen.getByRole('button', { name: /delete/i })
       await user.click(deleteButton)
@@ -110,7 +110,7 @@ describe('Poll Component', () => {
       const user = userEvent.setup()
       const onPollDeleted = jest.fn()
       
-      render(<Poll {...defaultProps} onPollDeleted={onPollDeleted} />)
+      render(<PollActions {...defaultProps} onPollDeleted={onPollDeleted} />)
       
       // Open confirmation dialog
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -133,7 +133,7 @@ describe('Poll Component', () => {
     it('calls router.refresh when onPollDeleted is not provided', async () => {
       const user = userEvent.setup()
       
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       // Open confirmation dialog
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -162,7 +162,7 @@ describe('Poll Component', () => {
       }
       ;(createSupabaseBrowserClient as jest.Mock).mockReturnValue(mockSupabaseWithError)
       
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       // Open confirmation dialog
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -194,7 +194,7 @@ describe('Poll Component', () => {
       }
       ;(createSupabaseBrowserClient as jest.Mock).mockReturnValue(mockSupabaseWithDelay)
       
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       // Open confirmation dialog
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -232,7 +232,7 @@ describe('Poll Component', () => {
       }
       ;(createSupabaseBrowserClient as jest.Mock).mockReturnValue(mockSupabaseWithDelay)
       
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       // Open confirmation dialog
       const deleteButton = screen.getByRole('button', { name: /delete/i })
@@ -255,7 +255,7 @@ describe('Poll Component', () => {
 
   describe('Props Validation', () => {
     it('works with all required props', () => {
-      render(<Poll {...defaultProps} />)
+      render(<PollActions {...defaultProps} />)
       
       expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
@@ -263,7 +263,7 @@ describe('Poll Component', () => {
 
     it('works with optional onPollDeleted callback', () => {
       const onPollDeleted = jest.fn()
-      render(<Poll {...defaultProps} onPollDeleted={onPollDeleted} />)
+      render(<PollActions {...defaultProps} onPollDeleted={onPollDeleted} />)
       
       expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()

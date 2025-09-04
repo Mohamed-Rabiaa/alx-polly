@@ -36,9 +36,8 @@ export function Poll({
   const { toast } = useToast();
   const supabase = createSupabaseBrowserClient();
 
-  // Only show  if the current user created this poll
-  // Temporarily showing for all users for testing purposes
-  if (!currentUserId) {
+  // Only show if the current user created this poll
+  if (!currentUserId || currentUserId !== pollCreatorId) {
     return null;
   }
 
