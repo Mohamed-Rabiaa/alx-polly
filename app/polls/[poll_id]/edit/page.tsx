@@ -336,7 +336,7 @@ function EditPollPageContent({ params }: EditPollPageProps) {
                 <div className="space-y-4">
                   <Label>Poll Options</Label>
                   {pollData.options.map((option, index) => (
-                    <div key={`option-${index}-${option}`} className="flex space-x-2">
+                    <div key={`option-${index}`} className="flex space-x-2">
                       <Input
                         placeholder={`Option ${index + 1}`}
                         value={option}
