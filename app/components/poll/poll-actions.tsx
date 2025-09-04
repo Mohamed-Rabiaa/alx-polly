@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Edit, Trash } from "lucide-react";
 import { useToast } from "@/app/components/ui/use-toast";
@@ -17,12 +17,136 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-interface PollProps {
+// Types
+interface PollActionsProps {
   pollId: string;
   pollCreatorId: string;
   currentUserId: string | undefined;
   onPollDeleted?: () => void;
+}
+
+interface PollOperationResult {
+  success: boolean;
+  error?: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
+interface AuthenticationResult {
+  isAuthorized: boolean;
+  error?: string;
+}
+
+// Centralized Supabase client
+class SupabaseClientManager {
+  private static instance: SupabaseClient | null = null;
+
+  static getClient(): SupabaseClient {
+    if (!this.instance) {
+      this.instance = createSupabaseBrowserClient();
+    }
+    return this.instance;
+  }
+}
+
+// Input validation
+class PollValidator {
+  static validatePollId(pollId: string): ValidationResult {
+    if (!pollId || typeof pollId !== 'string' || pollId.trim().length === 0) {
+      return {
+        isValid: false,
+        error: 'Invalid poll ID provided'
+      };
+    }
+    return { isValid: true };
+  }
+
+  static validateUserId(userId: string | undefined): ValidationResult {
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+      return {
+        isValid: false,
+        error: 'Invalid user ID provided'
+      };
+    }
+    return { isValid: true };
+  }
+}
+
+// Authentication logic
+class PollAuthenticator {
+  static checkPollOwnership(
+    currentUserId: string | undefined,
+    pollCreatorId: string
+  ): AuthenticationResult {
+    const userValidation = PollValidator.validateUserId(currentUserId);
+    if (!userValidation.isValid) {
+      return {
+        isAuthorized: false,
+        error: 'User not authenticated'
+      };
+    }
+
+    if (currentUserId !== pollCreatorId) {
+      return {
+        isAuthorized: false,
+        error: 'User not authorized to perform this action'
+      };
+    }
+
+    return { isAuthorized: true };
+  }
+}
+
+// Poll operations
+class PollOperations {
+  private static supabase = SupabaseClientManager.getClient();
+
+  static async deletePoll(pollId: string): Promise<PollOperationResult> {
+    try {
+      const validation = PollValidator.validatePollId(pollId);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: validation.error
+        };
+      }
+
+      const { error } = await this.supabase
+        .from("polls")
+        .delete()
+        .eq("id", pollId);
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete poll'
+      };
+    }
+  }
+}
+
+// Standardized error responses
+class ErrorHandler {
+  static getStandardErrorMessage(error: string | undefined): string {
+    const errorMessages: Record<string, string> = {
+      'Invalid poll ID provided': 'The poll could not be found.',
+      'User not authenticated': 'Please log in to perform this action.',
+      'User not authorized to perform this action': 'You can only modify polls you created.',
+      'Failed to delete poll': 'Unable to delete the poll. Please try again.',
+    };
+
+    return errorMessages[error || ''] || 'An unexpected error occurred. Please try again.';
+  }
 }
 
 export function Poll({
@@ -30,32 +154,46 @@ export function Poll({
   pollCreatorId,
   currentUserId,
   onPollDeleted,
-}: PollProps) {
+}: PollActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createSupabaseBrowserClient();
 
-  // Only show if the current user created this poll
-  if (!currentUserId || currentUserId !== pollCreatorId) {
+  // Memoized authentication check
+  const authResult = useMemo(() => 
+    PollAuthenticator.checkPollOwnership(currentUserId, pollCreatorId),
+    [currentUserId, pollCreatorId]
+  );
+
+  // Early return if user is not authorized
+  if (!authResult.isAuthorized) {
     return null;
   }
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
+    const validation = PollValidator.validatePollId(pollId);
+    if (!validation.isValid) {
+      toast({
+        title: "Error",
+        description: ErrorHandler.getStandardErrorMessage(validation.error),
+        variant: "destructive",
+      });
+      return;
+    }
     router.push(`/polls/${pollId}/edit`);
-  };
+  }, [pollId, router, toast]);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (isDeleting) return;
 
     try {
       setIsDeleting(true);
       
-      // Delete the poll from the database
-      const { error } = await supabase.from("polls").delete().eq("id", pollId);
+      // Use modularized poll operations
+      const result = await PollOperations.deletePoll(pollId);
       
-      if (error) {
-        throw error;
+      if (!result.success) {
+        throw new Error(result.error);
       }
       
       toast({
@@ -70,17 +208,16 @@ export function Poll({
         router.refresh();
       }
     } catch (error) {
-      console.error("Error deleting poll:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete poll';
       toast({
         title: "Error",
-        description: "Failed to delete the poll. Please try again.",
+        description: ErrorHandler.getStandardErrorMessage(errorMessage),
         variant: "destructive",
       });
     } finally {
       setIsDeleting(false);
-      // Dialog will close automatically after action
     }
-  };
+  }, [isDeleting, pollId, toast, onPollDeleted, router]);
 
   return (
     <div className="flex space-x-2">

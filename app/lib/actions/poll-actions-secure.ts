@@ -37,7 +37,7 @@ export async function deleteVotesForOptionSecure(optionId: string) {
       }
     }
     
-    if (!optionData || optionData.polls.user_id !== user.id) {
+    if (!optionData || (optionData.polls as any).user_id !== user.id) {
       return { 
         success: false, 
         error: 'You can only delete options from your own polls' 
@@ -102,7 +102,7 @@ export async function deletePollOptionSecure(optionId: string) {
       }
     }
     
-    if (!optionData || optionData.polls.user_id !== user.id) {
+    if (!optionData || (optionData.polls as any).user_id !== user.id) {
       return { 
         success: false, 
         error: 'You can only delete options from your own polls' 
@@ -169,7 +169,7 @@ export async function checkVotesForOptionSecure(optionId: string) {
       }
     }
     
-    if (!optionData || optionData.polls.user_id !== user.id) {
+    if (!optionData || (optionData.polls as any).user_id !== user.id) {
       return { 
         success: false, 
         error: 'You can only access votes from your own polls',
@@ -239,7 +239,7 @@ export async function verifyOptionExistsSecure(optionId: string) {
     }
     
     const option = data?.[0]
-    const exists = !!option && option.polls.user_id === user.id
+    const exists = !!option && (option.polls as any).user_id === user.id
     
     return { 
       success: true, 
