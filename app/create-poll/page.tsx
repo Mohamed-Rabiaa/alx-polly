@@ -1,5 +1,31 @@
 "use client";
 
+/**
+ * Create Poll Page
+ * 
+ * This module provides the user interface and logic for creating new polls.
+ * It implements a multi-step poll creation process with form validation,
+ * preview functionality, and database persistence.
+ * 
+ * Features:
+ * - Interactive poll form with dynamic options
+ * - Real-time preview of poll appearance
+ * - Form validation and error handling
+ * - Database transaction for poll and options creation
+ * - Authentication-protected route
+ * - Toast notifications for user feedback
+ * 
+ * Database Operations:
+ * - Creates poll record in 'polls' table
+ * - Creates associated options in 'poll_options' table
+ * - Uses Supabase RLS for security
+ * 
+ * Security:
+ * - Protected by withAuth HOC
+ * - User authentication validation
+ * - Input sanitization and validation
+ */
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
@@ -18,20 +44,80 @@ import { Header } from "@/app/components/layout/header";
 import { createSupabaseBrowserClient } from "@/app/lib/supabase";
 import { useToast } from "@/app/components/ui/use-toast";
 
+/**
+ * Create Poll Page Content Component
+ * 
+ * Main component for poll creation interface. Handles form state management,
+ * validation, database operations, and user interactions.
+ * 
+ * @returns {JSX.Element} The create poll page UI
+ */
 function CreatePollPageContent() {
+  // ========================================================================
+  // STATE AND HOOKS
+  // ========================================================================
+  
+  /**
+   * Poll form data state
+   * 
+   * Manages the poll creation form data including title, description,
+   * and dynamic list of poll options. Initialized with empty values
+   * and minimum required options (2).
+   */
   const [pollData, setPollData] = useState({
+    /** Poll title (required) */
     title: "",
+    /** Poll description (optional) */
     description: "",
+    /** Array of poll options (minimum 2 required) */
     options: ["", ""],
   });
+  
+  /**
+   * Preview modal visibility state
+   * 
+   * Controls whether the poll preview modal is displayed to the user.
+   */
   const [showPreview, setShowPreview] = useState(false);
+  
+  /** Current authenticated user from auth context */
   const { user } = useAuth();
+  
+  /** Supabase client for database operations */
   const supabase = createSupabaseBrowserClient();
+  
+  /** Next.js router for navigation */
   const router = useRouter();
+  
+  /** Toast notification hook for user feedback */
   const { toast } = useToast();
 
+  // ========================================================================
+  // EVENT HANDLERS
+  // ========================================================================
+  
+  /**
+   * Handles poll creation form submission
+   * 
+   * Performs a multi-step database transaction to create a poll and its options:
+   * 1. Validates user authentication
+   * 2. Creates the poll record in the 'polls' table
+   * 3. Creates associated options in the 'poll_options' table
+   * 4. Handles success/error states and user feedback
+   * 5. Resets form and navigates on success
+   * 
+   * Database Transaction Flow:
+   * - Poll creation returns the new poll ID
+   * - Poll options are created with references to the poll ID
+   * - RLS policies ensure only authenticated users can create polls
+   * 
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
+    // Prevent default form submission behavior
     e.preventDefault();
+    
+    // Authentication validation
     if (!user) {
       toast({
         variant: "destructive",
@@ -41,17 +127,18 @@ function CreatePollPageContent() {
       return;
     }
 
-    // 1. Insert the poll
+    // Step 1: Create the poll record
     const { data: poll, error: pollError } = await supabase
       .from("polls")
       .insert({
         title: pollData.title,
         description: pollData.description,
-        user_id: user.id,
+        user_id: user.id, // Associate poll with current user
       })
-      .select()
-      .single();
+      .select() // Return the created record
+      .single(); // Expect single result
 
+    // Handle poll creation errors
     if (pollError) {
       console.error("Error creating poll:", pollError);
       toast({
@@ -62,14 +149,15 @@ function CreatePollPageContent() {
       return;
     }
 
-    // 2. Insert the poll options
+    // Step 2: Create poll options with references to the poll
     const { error: optionsError } = await supabase.from("poll_options").insert(
       pollData.options.map((option) => ({
-        poll_id: poll.id,
+        poll_id: poll.id, // Reference to the created poll
         option_text: option,
       }))
     );
 
+    // Handle options creation errors
     if (optionsError) {
       console.error("Error creating poll options:", optionsError);
       toast({
@@ -80,21 +168,21 @@ function CreatePollPageContent() {
       return;
     }
 
-    // 3. Reset the form
+    // Step 3: Reset form to initial state
     setPollData({
       title: "",
       description: "",
       options: ["", ""],
     });
 
-    // 4. Show success message and redirect
+    // Step 4: Show success notification and navigate
     toast({
       variant: "success",
       title: "Success",
       description: "Poll created successfully!"
     });
     
-    // Redirect to polls page
+    // Navigate to polls listing page
     router.push("/polls");
   };
 
