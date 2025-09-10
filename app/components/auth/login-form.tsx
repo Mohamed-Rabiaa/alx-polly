@@ -52,11 +52,42 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
     password: "",
   });
 
+  // Error state for form validation
+  const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
+
+  /**
+   * Validates form data before submission
+   * 
+   * @returns {Partial<LoginCredentials>} Object containing validation errors
+   */
+  const validateForm = (): Partial<LoginCredentials> => {
+    const newErrors: Partial<LoginCredentials> = {};
+    
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+    
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+    
+    return newErrors;
+  };
+
   /**
    * Handles form submission
    * 
-   * Prevents default browser form submission and calls the parent's
-   * onSubmit callback with the current form data.
+   * Prevents default browser form submission, validates form data,
+   * and calls the parent's onSubmit callback with sanitized data.
    * 
    * @param {React.FormEvent} e - Form submission event
    */
@@ -64,8 +95,21 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
     // Prevent default browser form submission behavior
     e.preventDefault();
     
-    // Pass form data to parent component for authentication
-    onSubmit(formData);
+    // Validate form data
+    const newErrors = validateForm();
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
+    
+    // Pass sanitized form data to parent component for authentication
+    onSubmit({
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+    });
   };
 
   /**
@@ -73,6 +117,7 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
    * 
    * Updates the form state when user types in email or password fields.
    * Uses the input's name attribute to update the correct field.
+   * Clears validation errors when user starts typing.
    * 
    * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event
    */
@@ -85,6 +130,14 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
       ...prev,
       [name]: value, // Dynamically update the field based on input name
     }));
+    
+    // Clear error when user starts typing
+    if (errors[name as keyof LoginCredentials]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
   return (
@@ -108,6 +161,9 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
               onChange={handleChange}
               required
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -120,6 +176,9 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
               onChange={handleChange}
               required
             />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password}</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}

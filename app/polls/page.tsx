@@ -39,6 +39,7 @@ import { Poll } from "@/app/types/poll";
 import { useAuth } from "@/app/context/auth-context";
 import { Poll as PollComponent } from "@/app/components/poll/poll-actions";
 import { useToast } from "@/app/components/ui/use-toast";
+import { ErrorHandler } from "@/app/lib/error-handler";
 
 /**
  * Example polls data for development/testing purposes
@@ -145,11 +146,8 @@ function PollsPageContent() {
     const { data, error } = await supabase.from("polls").select("*");
     
     if (error) {
-      console.error("Error fetching polls:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load polls. Please try again.",
-        variant: "destructive",
+      ErrorHandler.handleError(error, {
+        fallbackMessage: 'Failed to load polls'
       });
     } else if (data) {
       // Update polls state with fetched data

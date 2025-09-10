@@ -1,5 +1,12 @@
 import { createSupabaseServerClient } from "@/app/lib/supabase-server";
 import { NextResponse } from "next/server";
+import { 
+  OptionVerificationResponse, 
+  PollOptionWithPoll,
+  DeleteResponse,
+  AuthErrorResponse 
+} from "@/app/types/api";
+import { ErrorHandler } from "@/app/lib/error-handler";
 
 export async function GET(
   request: Request,
@@ -14,12 +21,12 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
+      const errorResponse: AuthErrorResponse = {
+        success: false,
+        error: "Authentication required",
+      };
       return NextResponse.json(
-        {
-          success: false,
-          error: "Authentication required",
-          exists: false,
-        },
+        { ...errorResponse, exists: false },
         { status: 401 }
       );
     }
@@ -40,34 +47,32 @@ export async function GET(
       .eq("id", optionId);
 
     if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to verify option: ${error.message}`,
-          exists: false,
-        },
-        { status: 500 }
-      );
+      const errorResponse: OptionVerificationResponse = {
+        success: false,
+        error: `Failed to verify option: ${error.message}`,
+        exists: false,
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    const option = data?.[0];
-    const exists = !!option && (option.polls as any).user_id === user.id;
+    const option = data?.[0] as PollOptionWithPoll | undefined;
+    const exists = !!option && option.polls.user_id === user.id;
 
-    return NextResponse.json({
+    const response: OptionVerificationResponse = {
       success: true,
       exists,
       option: exists ? option : null,
-    });
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Error in verifyOptionExistsSecure:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        exists: false,
-      },
-      { status: 500 }
-    );
+    const standardError = ErrorHandler.createApiErrorResponse(error, 'Failed to verify option');
+    const errorResponse: OptionVerificationResponse = {
+      success: false,
+      error: standardError.error,
+      exists: false,
+    };
+    return NextResponse.json(errorResponse, { status: standardError.statusCode });
   }
 }
 
@@ -84,13 +89,11 @@ export async function DELETE(
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Authentication required",
-        },
-        { status: 401 }
-      );
+      const errorResponse: AuthErrorResponse = {
+        success: false,
+        error: "Authentication required",
+      };
+      return NextResponse.json(errorResponse, { status: 401 });
     }
 
     const { data: optionData, error: optionError } = await supabase
@@ -109,23 +112,20 @@ export async function DELETE(
       .single();
 
     if (optionError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to verify option ownership: ${optionError.message}`,
-        },
-        { status: 500 }
-      );
+      const errorResponse: DeleteResponse = {
+        success: false,
+        error: `Failed to verify option ownership: ${optionError.message}`,
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    if (!optionData || (optionData.polls as any).user_id !== user.id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "You can only delete options from your own polls",
-        },
-        { status: 403 }
-      );
+    const typedOptionData = optionData as PollOptionWithPoll;
+    if (!typedOptionData || typedOptionData.polls.user_id !== user.id) {
+      const errorResponse: DeleteResponse = {
+        success: false,
+        error: "You can only delete options from your own polls",
+      };
+      return NextResponse.json(errorResponse, { status: 403 });
     }
 
     const { data, error } = await supabase
@@ -135,24 +135,24 @@ export async function DELETE(
       .select();
 
     if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to delete poll option: ${error.message}`,
-        },
-        { status: 500 }
-      );
+      const errorResponse: DeleteResponse = {
+        success: false,
+        error: `Failed to delete poll option: ${error.message}`,
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, deletedOption: data });
+    const response: DeleteResponse<PollOptionWithPoll> = {
+      success: true,
+      deletedOption: data,
+    };
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Error in deletePollOptionSecure:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    const standardError = ErrorHandler.createApiErrorResponse(error, 'Failed to delete poll option');
+    const errorResponse: DeleteResponse = {
+      success: false,
+      error: standardError.error,
+    };
+    return NextResponse.json(errorResponse, { status: standardError.statusCode });
   }
 }

@@ -1,5 +1,11 @@
 import { createSupabaseServerClient } from "@/app/lib/supabase-server";
 import { NextResponse } from "next/server";
+import { 
+  VoteCheckResponse, 
+  DeleteVotesResponse, 
+  PollOptionWithPoll 
+} from "@/app/types/api";
+import { ErrorHandler } from "@/app/lib/error-handler";
 
 export async function GET(
   request: Request,
@@ -14,14 +20,12 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Authentication required",
-          votes: [],
-        },
-        { status: 401 }
-      );
+      const errorResponse: VoteCheckResponse = {
+        success: false,
+        error: "Authentication required",
+        votes: [],
+      };
+      return NextResponse.json(errorResponse, { status: 401 });
     }
 
     const { data: optionData, error: optionError } = await supabase
@@ -40,25 +44,22 @@ export async function GET(
       .single();
 
     if (optionError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to verify option ownership: ${optionError.message}`,
-          votes: [],
-        },
-        { status: 500 }
-      );
+      const errorResponse: VoteCheckResponse = {
+        success: false,
+        error: `Failed to verify option ownership: ${optionError.message}`,
+        votes: [],
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    if (!optionData || (optionData.polls as any).user_id !== user.id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "You can only access votes from your own polls",
-          votes: [],
-        },
-        { status: 403 }
-      );
+    const typedOptionData = optionData as PollOptionWithPoll;
+    if (!typedOptionData || typedOptionData.polls.user_id !== user.id) {
+      const errorResponse: VoteCheckResponse = {
+        success: false,
+        error: "You can only access votes from your own polls",
+        votes: [],
+      };
+      return NextResponse.json(errorResponse, { status: 403 });
     }
 
     const { data, error } = await supabase
@@ -67,27 +68,27 @@ export async function GET(
       .eq("option_id", optionId);
 
     if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to check votes: ${error.message}`,
-          votes: [],
-        },
-        { status: 500 }
-      );
+      const errorResponse: VoteCheckResponse = {
+        success: false,
+        error: `Failed to check votes: ${error.message}`,
+        votes: [],
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, votes: data || [] });
+    const response: VoteCheckResponse = {
+      success: true,
+      votes: data || [],
+    };
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Error in checkVotesForOptionSecure:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        votes: [],
-      },
-      { status: 500 }
-    );
+    const standardError = ErrorHandler.createApiErrorResponse(error, 'Failed to check votes');
+    const response: VoteCheckResponse = {
+      success: false,
+      error: standardError.error,
+      votes: [],
+    };
+    return NextResponse.json(response, { status: standardError.statusCode });
   }
 }
 
@@ -104,13 +105,11 @@ export async function DELETE(
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Authentication required",
-        },
-        { status: 401 }
-      );
+      const errorResponse: DeleteVotesResponse = {
+        success: false,
+        error: "Authentication required",
+      };
+      return NextResponse.json(errorResponse, { status: 401 });
     }
 
     const { data: optionData, error: optionError } = await supabase
@@ -129,23 +128,20 @@ export async function DELETE(
       .single();
 
     if (optionError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to verify option ownership: ${optionError.message}`,
-        },
-        { status: 500 }
-      );
+      const errorResponse: DeleteVotesResponse = {
+        success: false,
+        error: `Failed to verify option ownership: ${optionError.message}`,
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    if (!optionData || (optionData.polls as any).user_id !== user.id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "You can only delete options from your own polls",
-        },
-        { status: 403 }
-      );
+    const typedOptionData = optionData as PollOptionWithPoll;
+    if (!typedOptionData || typedOptionData.polls.user_id !== user.id) {
+      const errorResponse: DeleteVotesResponse = {
+        success: false,
+        error: "You can only delete options from your own polls",
+      };
+      return NextResponse.json(errorResponse, { status: 403 });
     }
 
     const { data, error } = await supabase
@@ -155,24 +151,24 @@ export async function DELETE(
       .select();
 
     if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to delete votes: ${error.message}`,
-        },
-        { status: 500 }
-      );
+      const errorResponse: DeleteVotesResponse = {
+        success: false,
+        error: `Failed to delete votes: ${error.message}`,
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, deletedVotes: data });
+    const response: DeleteVotesResponse = {
+      success: true,
+      deletedVotes: data,
+    };
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Error in deleteVotesForOptionSecure:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    const standardError = ErrorHandler.createApiErrorResponse(error, 'Failed to delete votes');
+    const errorResponse: DeleteVotesResponse = {
+      success: false,
+      error: standardError.error,
+    };
+    return NextResponse.json(errorResponse, { status: standardError.statusCode });
   }
 }
