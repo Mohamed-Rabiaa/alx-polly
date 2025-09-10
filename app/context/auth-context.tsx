@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { createSupabaseBrowserClient } from '@/app/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
@@ -61,11 +61,11 @@ const AuthContext = createContext<AuthContextType>({
  * @returns {JSX.Element} Provider component with authentication context
  */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Initialize Supabase client for browser-side authentication
-  const supabase = createSupabaseBrowserClient();
-  
   // Local state to track current authenticated user
   const [user, setUser] = useState<MaybeSession>(null);
+  
+  // Initialize Supabase client for browser-side authentication (memoized)
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   useEffect(() => {
     /**
@@ -113,16 +113,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
    * @function signOut
    * @returns {Promise<void>} Promise that resolves when sign-out is complete
    */
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // Clear Supabase session (removes tokens from storage)
     await supabase.auth.signOut();
     // Immediately update local state to reflect signed-out status
     setUser(null);
-  };
+  }, [supabase]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ user, signOut }), [user, signOut]);
 
   // Provide authentication context to all child components
   return (
-    <AuthContext.Provider value={{ user, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

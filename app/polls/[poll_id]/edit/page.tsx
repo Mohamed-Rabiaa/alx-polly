@@ -50,6 +50,7 @@ import { createSupabaseBrowserClient } from "@/app/lib/supabase";
 import { deleteVotesForOptionSecure, deletePollOptionSecure, checkVotesForOptionSecure, verifyOptionExistsSecure } from "@/app/lib/actions/poll-actions-secure";
 import { useToast } from "@/app/components/ui/use-toast";
 import { Poll, PollOption } from "@/app/types/poll";
+import { ErrorHandler } from "@/app/lib/error-handler";
 
 /**
  * Props interface for EditPollPage component
@@ -210,11 +211,8 @@ function EditPollPageContent({ params }: EditPollPageProps) {
           options: optionsData ? optionsData.map((option) => option.option_text) : ["", ""],
         });
       } catch (error) {
-        console.error("Error fetching poll:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load poll data. Please try again.",
-          variant: "destructive",
+        ErrorHandler.handleError(error, {
+          fallbackMessage: 'Failed to load poll data'
         });
         router.push("/polls");
       } finally {
@@ -411,7 +409,10 @@ function EditPollPageContent({ params }: EditPollPageProps) {
         .eq("poll_id", poll_id);
         
       if (refreshError) {
-        console.error("Error refreshing poll options:", refreshError);
+        ErrorHandler.handleError(refreshError, {
+          showToast: false,
+          fallbackMessage: 'Failed to refresh poll options'
+        });
       } else {
         // Update component state with fresh data from database
         setPollOptions(updatedOptionsData || []);
@@ -430,12 +431,8 @@ function EditPollPageContent({ params }: EditPollPageProps) {
       router.push("/polls");
     } catch (error) {
       // Comprehensive error handling with user-friendly messages
-      console.error("Error updating poll:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update poll. Please try again.";
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+      ErrorHandler.handleError(error, {
+        fallbackMessage: 'Failed to update poll. Please try again.'
       });
     }
   };
